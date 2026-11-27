@@ -1,8 +1,34 @@
+import nusaFrameLarge from '../assets/nusa-frame-agency-920.webp'
+import nusaFrameSmall from '../assets/nusa-frame-agency-480.webp'
+import weddingLarge from '../assets/wedding-invitation-920.webp'
+import weddingSmall from '../assets/wedding-invitation-480.webp'
 import CurvedCarousel from '../effects/CurvedCarousel'
 
 const PROJECTS = [
-  { title: 'Wedding Invitation with Anime Vibes', tag: 'Proyek' },
-  { title: 'Cheerful Wedding Invitation', tag: 'Proyek' },
+  {
+    title: 'Nusa Frame Agency',
+    tag: 'Proyek',
+    href: 'https://nusaframeagency-two.vercel.app/',
+    image: {
+      src: nusaFrameSmall,
+      srcSet: `${nusaFrameSmall} 480w, ${nusaFrameLarge} 920w`,
+      width: 920,
+      height: 575,
+      position: 'object-left-top',
+    },
+  },
+  {
+    title: 'Cheerful Wedding Invitation',
+    tag: 'Proyek',
+    href: 'https://wedding-invitation-beta-green-45.vercel.app/',
+    image: {
+      src: weddingSmall,
+      srcSet: `${weddingSmall} 480w, ${weddingLarge} 920w`,
+      width: 920,
+      height: 920,
+      position: 'object-top',
+    },
+  },
   { title: 'Eksperimen berikutnya', tag: 'Segera hadir' },
   { title: 'Proyek berikutnya', tag: 'Segera hadir' },
 ]

@@ -1,10 +1,14 @@
 import { useState } from 'react'
+import { flushSync } from 'react-dom'
+import { ArrowUpRight } from 'lucide-react'
 import useReducedMotion from '../hooks/useReducedMotion'
 
 const ANGLE = 38
 const DEPTH = 160
 const SCALE_DROP = 0.1
 const EASE = 'cubic-bezier(0.16, 1, 0.3, 1)'
+const BTN =
+  'rounded-full border border-line px-3 py-1 font-mono text-xs text-paper transition-colors duration-150 hover:border-muted aria-disabled:cursor-not-allowed aria-disabled:text-muted aria-disabled:opacity-50 aria-disabled:hover:border-line'
 
 function itemStyle(offset, reduced) {
   const abs = Math.abs(offset)
@@ -30,13 +34,19 @@ export default function CurvedCarousel({ items, label }) {
   const go = (i) => setIndex(Math.min(Math.max(i, 0), last))
 
   const onKeyDown = (e) => {
-    if (e.key === 'ArrowLeft') {
-      e.preventDefault()
-      go(index - 1)
-    } else if (e.key === 'ArrowRight') {
-      e.preventDefault()
-      go(index + 1)
-    }
+    const step = { ArrowLeft: -1, ArrowRight: 1 }[e.key]
+    if (!step) return
+    e.preventDefault()
+    // A focused card is swapped out when it leaves the center, which would drop focus.
+    if (e.target.closest('li')) e.currentTarget.focus()
+    go(index + step)
+  }
+
+  const select = (e, i) => {
+    const li = e.currentTarget.parentElement
+    flushSync(() => go(i))
+    // preventScroll: the card is still off-center and would scroll the clipped stage.
+    li.firstElementChild.focus({ preventScroll: true })
   }
 
   return (
@@ -59,7 +69,8 @@ export default function CurvedCarousel({ items, label }) {
           {items.map((item, i) => {
             const offset = i - index
             const isActive = offset === 0
-            const Card = isActive ? 'article' : 'button'
+            const isLink = isActive && Boolean(item.href)
+            const Card = !isActive ? 'button' : isLink ? 'a' : 'article'
             return (
               <li
                 key={item.title}
@@ -69,25 +80,83 @@ export default function CurvedCarousel({ items, label }) {
               >
                 <Card
                   {...(isActive
-                    ? {}
+                    ? { tabIndex: isLink ? undefined : -1 }
                     : {
                         type: 'button',
-                        onClick: () => go(i),
+                        onClick: (e) => select(e, i),
                         'aria-label': `Tampilkan ${item.title}`,
                       })}
-                  className={`flex h-[260px] w-full flex-col justify-end rounded-xl border border-line bg-surface p-6 text-left md:h-[320px] ${
+                  {...(isLink
+                    ? {
+                        href: item.href,
+                        target: '_blank',
+                        rel: 'noopener noreferrer',
+                      }
+                    : {})}
+                  className={`group flex h-[260px] w-full flex-col justify-end overflow-hidden rounded-xl border border-line bg-surface text-left md:h-[320px] ${
                     isActive ? '' : 'cursor-pointer'
                   }`}
                 >
-                  <p className="font-mono text-xs text-muted">{item.tag}</p>
-                  <h3 className="mt-2 text-xl font-medium leading-snug">
-                    {item.title}
-                  </h3>
+                  {item.image && (
+                    <div className="min-h-0 w-full flex-1 overflow-hidden">
+                      <img
+                        src={item.image.src}
+                        srcSet={item.image.srcSet}
+                        sizes="(min-width: 768px) 340px, 80vw"
+                        width={item.image.width}
+                        height={item.image.height}
+                        alt=""
+                        loading="lazy"
+                        className={`h-full w-full object-cover ${item.image.position} ${
+                          isLink
+                            ? 'motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-out-expo motion-safe:group-hover:scale-[1.02]'
+                            : ''
+                        }`}
+                      />
+                    </div>
+                  )}
+                  <div className="w-full p-6">
+                    <p className="font-mono text-xs text-muted">{item.tag}</p>
+                    <h3 className="mt-2 text-xl font-medium leading-snug">
+                      {item.title}
+                      {isLink && (
+                        <>
+                          <ArrowUpRight
+                            aria-hidden="true"
+                            className="ml-1 inline size-5 align-text-bottom text-accent"
+                          />
+                          <span className="sr-only"> (buka di tab baru)</span>
+                        </>
+                      )}
+                    </h3>
+                  </div>
                 </Card>
               </li>
             )
           })}
         </ul>
+      </div>
+
+      {/* aria-disabled, not disabled: a disabled button drops keyboard focus at either end. */}
+      <div className="flex justify-between">
+        <button
+          type="button"
+          className={BTN}
+          onClick={() => go(index - 1)}
+          aria-disabled={index === 0}
+          aria-label="Proyek sebelumnya"
+        >
+          prev
+        </button>
+        <button
+          type="button"
+          className={BTN}
+          onClick={() => go(index + 1)}
+          aria-disabled={index === last}
+          aria-label="Proyek berikutnya"
+        >
+          next
+        </button>
       </div>
 
       <p className="sr-only" aria-live="polite">
